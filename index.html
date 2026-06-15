@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Asistente · Tu Web en 7 Días</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Poppins:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #F5F3EE;
+    --surface:   #ECEAE4;
+    --surface2:  #E4E1DB;
+    --border:    #D4D0C8;
+    --ink:       #1C1A28;
+    --ink-mid:   #4A4660;
+    --dust:      #8A8598;
+    --dust-lt:   #B8B4C4;
+    --lav:       #7B68EE;
+    --lav-rich:  #5A4FCF;
+    --lav-soft:  #C4B8F8;
+    --lav-tint:  #ECEAFF;
+    --lav-deep:  #2D2460;
+    --teal:      #3A9E96;
+    --teal-tint: #E0F4F3;
+    --gold:      #B8902A;
+    --gold-tint: #FBF3D8;
+  }
+
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .widget {
+    width: 100%;
+    max-width: 480px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(90,79,207,0.08), 0 1px 4px rgba(0,0,0,0.06);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--lav-deep);
+    padding: 16px 20px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .header-avatar {
+    width: 36px; height: 36px;
+    background: var(--lav);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+  .header-name {
+    font-weight: 600; font-size: 13px; color: #fff; line-height: 1.3;
+  }
+  .header-status {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px; color: var(--lav-soft);
+    display: flex; align-items: center; gap: 5px; margin-top: 2px;
+  }
+  .status-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--teal);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  /* rate limit badge */
+  .rate-badge {
+    margin-left: auto;
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: rgba(196,184,248,0.6);
+    background: rgba(255,255,255,0.07);
+    padding: 3px 8px;
+    border-radius: 10px;
+    border: 1px solid rgba(196,184,248,0.15);
+  }
+  .rate-badge.warn { color: #FFCA6B; border-color: rgba(255,202,107,0.3); }
+  .rate-badge.out  { color: #FF8A8A; border-color: rgba(255,138,138,0.3); }
+
+  /* MESSAGES */
+  .messages {
+    flex: 1; padding: 20px 16px 12px;
+    display: flex; flex-direction: column; gap: 12px;
+    min-height: 300px; max-height: 380px;
+    overflow-y: auto; scroll-behavior: smooth;
+  }
+  .messages::-webkit-scrollbar { width: 4px; }
+  .messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .msg { display: flex; gap: 8px; align-items: flex-end; animation: fadeUp .25s ease; }
+  .msg.user { flex-direction: row-reverse; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+  .msg-avatar {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--lav);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; flex-shrink: 0; margin-bottom: 2px;
+  }
+  .msg.user .msg-avatar { background: var(--surface2); }
+
+  .bubble {
+    max-width: 82%; padding: 10px 14px; border-radius: 14px;
+    font-size: 12.5px; line-height: 1.55; color: var(--ink);
+  }
+  .msg.agent .bubble {
+    background: var(--surface); border: 1px solid var(--border);
+    border-bottom-left-radius: 4px;
+  }
+  .msg.user .bubble {
+    background: var(--lav); color: #fff;
+    border-bottom-right-radius: 4px;
+  }
+
+  /* service card */
+  .service-card {
+    margin-top: 10px; background: var(--bg);
+    border: 1px solid var(--lav-soft); border-radius: 8px; padding: 10px 12px;
+  }
+  .sc-title {
+    font-family: 'Lora', serif; font-size: 12.5px;
+    font-weight: 600; color: var(--lav-rich); margin-bottom: 5px;
+  }
+  .sc-items { list-style: none; display: flex; flex-direction: column; gap: 3px; }
+  .sc-items li { font-size: 11px; color: var(--ink-mid); display: flex; align-items: center; gap: 6px; }
+  .sc-items li::before { content: '→'; color: var(--lav); font-size: 10px; }
+
+  /* typing */
+  .typing { display: flex; gap: 8px; align-items: flex-end; }
+  .typing-dots {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; border-bottom-left-radius: 4px;
+    padding: 12px 16px; display: flex; gap: 4px; align-items: center;
+  }
+  .typing-dots span {
+    width: 5px; height: 5px; background: var(--dust-lt);
+    border-radius: 50%; animation: blink 1.2s infinite;
+  }
+  .typing-dots span:nth-child(2){animation-delay:.2s}
+  .typing-dots span:nth-child(3){animation-delay:.4s}
+  @keyframes blink{0%,80%,100%{opacity:.3}40%{opacity:1}}
+
+  /* quick replies */
+  .quick-replies {
+    padding: 0 16px 10px;
+    display: flex; flex-wrap: wrap; gap: 6px;
+  }
+  .qr-btn {
+    background: var(--lav-tint); border: 1px solid var(--lav-soft);
+    border-radius: 20px; padding: 5px 13px;
+    font-family: 'Poppins', sans-serif; font-size: 11px; font-weight: 500;
+    color: var(--lav-rich); cursor: pointer; transition: all .15s;
+  }
+  .qr-btn:hover { background: var(--lav); border-color: var(--lav); color: #fff; transform: translateY(-1px); }
+  .qr-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+  /* form */
+  .form-area {
+    padding: 0 16px 14px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .field-row { display: flex; gap: 8px; }
+  .field { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+  .field label {
+    font-family: 'Space Mono', monospace; font-size: 9px;
+    color: var(--dust); letter-spacing: .5px; text-transform: uppercase;
+  }
+  .field input {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 7px; padding: 8px 11px;
+    font-family: 'Poppins', sans-serif; font-size: 12px; color: var(--ink); outline: none;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .field input::placeholder { color: var(--dust-lt); }
+  .field input:focus { border-color: var(--lav); box-shadow: 0 0 0 3px rgba(123,104,238,.10); }
+  .submit-btn {
+    background: var(--lav-rich); border: none; border-radius: 8px;
+    padding: 10px 20px; font-family: 'Poppins', sans-serif;
+    font-size: 12.5px; font-weight: 600; color: #fff; cursor: pointer;
+    transition: all .15s; display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .submit-btn:hover { background: var(--lav); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(90,79,207,.22); }
+  .submit-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+  /* input row */
+  .input-row {
+    padding: 10px 16px; border-top: 1px solid var(--border);
+    display: flex; gap: 8px; align-items: center;
+  }
+  .chat-input {
+    flex: 1; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; padding: 8px 15px;
+    font-family: 'Poppins', sans-serif; font-size: 12px; color: var(--ink); outline: none;
+    transition: border-color .15s;
+  }
+  .chat-input::placeholder { color: var(--dust-lt); }
+  .chat-input:focus { border-color: var(--lav); }
+  .chat-input:disabled { opacity: .5; cursor: not-allowed; }
+  .send-btn {
+    width: 34px; height: 34px; background: var(--lav-rich); border: none;
+    border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all .15s; flex-shrink: 0;
+  }
+  .send-btn:hover { background: var(--lav); transform: scale(1.05); }
+  .send-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+  .send-btn svg { width: 15px; height: 15px; fill: #fff; }
+
+  /* success */
+  .success-msg {
+    display: none; flex-direction: column; align-items: center;
+    gap: 10px; padding: 28px 20px; text-align: center;
+  }
+  .checkmark {
+    width: 46px; height: 46px; background: var(--teal-tint);
+    border: 2px solid var(--teal); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-size: 20px;
+  }
+  .success-name {
+    font-family: 'Lora', serif; font-size: 17px;
+    font-weight: 600; color: var(--lav-rich);
+  }
+  .success-sub { font-size: 12.5px; color: var(--ink-mid); line-height: 1.55; }
+  .success-mono {
+    font-family: 'Space Mono', monospace; font-size: 9.5px; color: var(--dust);
+  }
+
+  /* footer */
+  .footer-stamp {
+    padding: 7px 16px; border-top: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .footer-stamp span { font-family: 'Space Mono', monospace; font-size: 9px; color: var(--dust-lt); }
+  .footer-stamp .powered { color: var(--lav-soft); font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="widget" id="widget">
+
+  <div class="header">
+    <div class="header-avatar">✦</div>
+    <div style="flex:1">
+      <div class="header-name">Asistente · Tu Web en 7 Días</div>
+      <div class="header-status">
+        <span class="status-dot"></span>
+        <span id="statusText">en línea</span>
+      </div>
+    </div>
+    <div class="rate-badge" id="rateBadge">5 mensajes</div>
+  </div>
+
+  <div class="messages" id="messages"></div>
+  <div class="quick-replies" id="quickReplies"></div>
+
+  <div class="form-area" id="formArea" style="display:none">
+    <div class="field-row">
+      <div class="field">
+        <label>Tu nombre</label>
+        <input type="text" id="inputName" placeholder="Carol" />
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="inputEmail" placeholder="hola@tucorreo.com" />
+      </div>
+    </div>
+    <div class="field">
+      <label>¿Qué necesitas? (opcional)</label>
+      <input type="text" id="inputNeed" placeholder="Ej: crear mi web desde cero" />
+    </div>
+    <button class="submit-btn" id="submitBtn" onclick="submitLead()">
+      Enviar — te respondo pronto &nbsp;→
+    </button>
+  </div>
+
+  <div class="success-msg" id="successMsg">
+    <div class="checkmark">✓</div>
+    <div class="success-name" id="successName"></div>
+    <p class="success-sub">Tu mensaje fue recibido.<br>Me pondré en contacto contigo muy pronto.</p>
+    <p class="success-mono">// lead capturado · gracias</p>
+  </div>
+
+  <div class="input-row" id="inputRow">
+    <input class="chat-input" id="chatInput"
+           placeholder="Escribe tu pregunta..."
+           onkeydown="if(event.key==='Enter'&&!event.shiftKey)sendMessage()" />
+    <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+      <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+    </button>
+  </div>
+
+  <div class="footer-stamp">
+    <span>Tu Web en 7 Días · 2024</span>
+    <span>powered by <span class="powered">Groq</span> · Llama 3.3</span>
+  </div>
+</div>
+
+<script>
+// ── CONFIG — CAMBIA ESTOS DOS VALORES ────────────────────────────────────────
+const PROXY_URL     = "https://TU-PROYECTO.vercel.app/api/chat"; // ← tu URL de Vercel
+const CONTACT_EMAIL = "carol@tudominio.com";                     // ← tu email
+const MAX_MSGS      = 5;   // mensajes por sesión
+
+// ── RATE LIMIT (cliente) ──────────────────────────────────────────────────────
+const RL_KEY = "ebook_agent_rl";
+
+function getRateData() {
+  try {
+    const d = JSON.parse(localStorage.getItem(RL_KEY) || "{}");
+    const now = Date.now();
+    // reset si han pasado más de 1 hora
+    if (d.ts && (now - d.ts) > 3600000) return { count: 0, ts: now };
+    return d.count !== undefined ? d : { count: 0, ts: now };
+  } catch { return { count: 0, ts: Date.now() }; }
+}
+
+function incrementRate() {
+  const d = getRateData();
+  d.count = (d.count || 0) + 1;
+  if (!d.ts) d.ts = Date.now();
+  localStorage.setItem(RL_KEY, JSON.stringify(d));
+  return d.count;
+}
+
+function updateBadge() {
+  const remaining = MAX_MSGS - getRateData().count;
+  const badge = document.getElementById("rateBadge");
+  if (remaining <= 0) {
+    badge.textContent = "límite alcanzado";
+    badge.className = "rate-badge out";
+    lockInput();
+  } else if (remaining <= 2) {
+    badge.textContent = `${remaining} mensaje${remaining > 1 ? 's' : ''}`;
+    badge.className = "rate-badge warn";
+  } else {
+    badge.textContent = `${remaining} mensajes`;
+    badge.className = "rate-badge";
+  }
+}
+
+function lockInput() {
+  document.getElementById("chatInput").disabled = true;
+  document.getElementById("sendBtn").disabled = true;
+  document.getElementById("chatInput").placeholder = "Límite alcanzado";
+  document.querySelectorAll(".qr-btn").forEach(b => b.disabled = true);
+  document.getElementById("statusText").textContent = "límite de sesión";
+}
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let conversation = [];
+let offered = false;
+
+const SYSTEM = `Eres el asistente de ventas de "Tu Web en 7 Días", un eBook que enseña a crear una web profesional con IA sin saber programar, precio €9.99.
+
+Personalidad: cercana, profesional, directa. Sin emojis en exceso. Siempre en español. Respuestas de máximo 3 frases.
+
+Objetivos en orden:
+1. Responder preguntas sobre el eBook de forma honesta y breve.
+2. Ofrecer servicios de desarrollo web profesional cuando sea natural.
+3. Invitar al usuario a dejar su email para seguimiento.
+
+Servicios disponibles:
+- Creación de webs (WordPress, Squarespace, Wix) desde €500
+- Integración IA y chatbots en webs existentes
+- SEO, velocidad y pagos online
+- Tarifa hora: €20/hr
+- Disponible en Dublín y remoto
+
+Cuando alguien quiera contratar: "Puedo hacerlo por ti. ¿Te mando los detalles a tu email?"
+Cuando alguien pida el email de contacto: "${CONTACT_EMAIL}"`;
+
+// ── DOM HELPERS ───────────────────────────────────────────────────────────────
+const $msgs = () => document.getElementById("messages");
+
+function addAgentMsg(html) {
+  const d = document.createElement("div");
+  d.className = "msg agent";
+  d.innerHTML = `<div class="msg-avatar">✦</div><div class="bubble">${html}</div>`;
+  $msgs().appendChild(d);
+  $msgs().scrollTop = $msgs().scrollHeight;
+}
+
+function addUserMsg(text) {
+  const d = document.createElement("div");
+  d.className = "msg user";
+  d.innerHTML = `<div class="bubble">${text}</div><div class="msg-avatar" style="background:var(--surface2)">👤</div>`;
+  $msgs().appendChild(d);
+  $msgs().scrollTop = $msgs().scrollHeight;
+}
+
+function showTyping() {
+  const d = document.createElement("div");
+  d.className = "typing"; d.id = "typing";
+  d.innerHTML = `<div class="msg-avatar">✦</div><div class="typing-dots"><span></span><span></span><span></span></div>`;
+  $msgs().appendChild(d);
+  $msgs().scrollTop = $msgs().scrollHeight;
+}
+function removeTyping() { document.getElementById("typing")?.remove(); }
+
+function setQuickReplies(opts) {
+  const qr = document.getElementById("quickReplies");
+  qr.innerHTML = "";
+  opts.forEach(o => {
+    const b = document.createElement("button");
+    b.className = "qr-btn"; b.textContent = o;
+    b.onclick = () => { clearQR(); addUserMsg(o); processInput(o, true); };
+    qr.appendChild(b);
+  });
+}
+function clearQR() { document.getElementById("quickReplies").innerHTML = ""; }
+
+// ── SEND ─────────────────────────────────────────────────────────────────────
+async function sendMessage() {
+  const input = document.getElementById("chatInput");
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = "";
+  clearQR();
+  addUserMsg(text);
+  processInput(text);
+}
+
+async function processInput(text, isQR = false) {
+  // client-side rate check
+  const count = getRateData().count;
+  if (count >= MAX_MSGS) { lockInput(); return; }
+
+  incrementRate();
+  updateBadge();
+  showTyping();
+  conversation.push({ role: "user", content: text });
+
+  const serviceKW = ["por mí","ayuda","contratar","servicio","profesional","hacer mi","crear mi","quiero una web","necesito una web","cuánto cuesta","presupuesto"];
+  const wantsService = serviceKW.some(k => text.toLowerCase().includes(k));
+
+  try {
+    const res = await fetch(PROXY_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages: conversation, system: SYSTEM })
+    });
+
+    const data = await res.json();
+
+    if (res.status === 429) {
+      removeTyping();
+      addAgentMsg(`Has alcanzado el límite de esta sesión. Escríbeme directamente a <b>${CONTACT_EMAIL}</b> y te respondo enseguida.`);
+      lockInput(); return;
+    }
+
+    const reply = data.content?.[0]?.text || "Disculpa, tuve un problema. Inténtalo de nuevo.";
+    conversation.push({ role: "assistant", content: reply });
+    removeTyping();
+
+    if (wantsService || reply.toLowerCase().includes("email") || reply.toLowerCase().includes("por ti")) {
+      addAgentMsg(reply + serviceCardHTML());
+      if (!offered) {
+        offered = true;
+        setTimeout(() => {
+          addAgentMsg("Déjame tus datos y te contacto en menos de 24h.");
+          showLeadForm();
+        }, 700);
+      }
+    } else {
+      addAgentMsg(reply);
+      const remaining = MAX_MSGS - getRateData().count;
+      if (remaining <= 2 && !offered) {
+        offered = true;
+        setTimeout(() => {
+          setQuickReplies(["Quiero contratar el servicio", "Solo quiero el eBook"]);
+        }, 500);
+      } else {
+        setQuickReplies(["¿Qué incluye?", "¿Necesito programar?", "¿Cuánto cuesta?", "Contratar servicio"]);
+      }
+    }
+  } catch (err) {
+    removeTyping();
+    addAgentMsg(`Tuve un problema técnico. Escríbeme a <b>${CONTACT_EMAIL}</b>`);
+  }
+}
+
+function serviceCardHTML() {
+  return `<div class="service-card">
+    <div class="sc-title">Servicios de desarrollo web</div>
+    <ul class="sc-items">
+      <li>Web completa desde cero — desde €500</li>
+      <li>IA y chatbots integrados</li>
+      <li>SEO + pagos + optimización</li>
+      <li>€20/hr · Dublín y remoto</li>
+    </ul>
+  </div>`;
+}
+
+function showLeadForm() {
+  document.getElementById("formArea").style.display = "flex";
+  document.getElementById("quickReplies").innerHTML = "";
+  document.getElementById("inputRow").style.display = "none";
+  setTimeout(() => document.getElementById("inputName").focus(), 100);
+}
+
+// ── SUBMIT LEAD ───────────────────────────────────────────────────────────────
+async function submitLead() {
+  const name  = document.getElementById("inputName").value.trim();
+  const email = document.getElementById("inputEmail").value.trim();
+  const need  = document.getElementById("inputNeed").value.trim();
+  if (!name || !email) { document.getElementById(!name ? "inputName" : "inputEmail").focus(); return; }
+
+  const btn = document.getElementById("submitBtn");
+  btn.disabled = true; btn.textContent = "Enviando...";
+
+  // ── FORMSPREE — reemplaza YOUR_FORM_ID con el tuyo de formspree.io ──────────
+  try {
+    await fetch("https://formspree.io/f/YOUR_FORM_ID", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name, email,
+        message: need || "(sin mensaje)",
+        _replyto: email,
+        _subject: `Nuevo lead — Tu Web en 7 Días · ${name}`
+      })
+    });
+  } catch (_) { /* falla silenciosamente — igual mostramos éxito */ }
+
+  document.getElementById("formArea").style.display = "none";
+  document.getElementById("messages").style.display = "none";
+  document.getElementById("quickReplies").style.display = "none";
+  const s = document.getElementById("successMsg");
+  s.style.display = "flex";
+  document.getElementById("successName").textContent = `¡Hola, ${name}!`;
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+updateBadge();
+setTimeout(() => addAgentMsg("¡Hola! Soy el asistente de <b>Tu Web en 7 Días</b>. ¿En qué puedo ayudarte?"), 400);
+setTimeout(() => setQuickReplies(["¿Qué incluye el eBook?", "¿Necesito saber programar?", "¿Cuánto cuesta?", "Quiero que lo hagan por mí"]), 900);
+</script>
+</body>
+</html>
