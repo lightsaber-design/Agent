@@ -1,11 +1,8 @@
-// api/chat.js — Vercel Edge Function
-// En Vercel → Settings → Environment Variables añade: GROQ_API_KEY
-
 export const config = { runtime: "edge" };
 
-const RATE_LIMIT = new Map(); // ip → { count, ts }
+const RATE_LIMIT = new Map();
 const MAX_CALLS  = 5;
-const WINDOW_MS  = 60 * 60 * 1000; // 1 hora
+const WINDOW_MS  = 60 * 60 * 1000;
 
 export default async function handler(req) {
   const headers = {
@@ -19,7 +16,6 @@ export default async function handler(req) {
   if (req.method !== "POST")
     return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers });
 
-  // ── RATE LIMIT (servidor) ─────────────────────────────────────────────────
   const ip  = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   const now = Date.now();
   const rec = RATE_LIMIT.get(ip);
@@ -29,7 +25,7 @@ export default async function handler(req) {
       RATE_LIMIT.set(ip, { count: 1, ts: now });
     } else if (rec.count >= MAX_CALLS) {
       return new Response(
-        JSON.stringify({ error: "rate_limit", message: "Límite de sesión alcanzado." }),
+        JSON.stringify({ error: "rate_limit" }),
         { status: 429, headers }
       );
     } else {
@@ -39,7 +35,6 @@ export default async function handler(req) {
     RATE_LIMIT.set(ip, { count: 1, ts: now });
   }
 
-  // ── PARSE BODY ────────────────────────────────────────────────────────────
   let body;
   try { body = await req.json(); }
   catch { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers }); }
@@ -48,12 +43,11 @@ export default async function handler(req) {
   if (!messages || !Array.isArray(messages))
     return new Response(JSON.stringify({ error: "Missing messages" }), { status: 400, headers });
 
-  // ── GROQ API ──────────────────────────────────────────────────────────────
   const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey)
-    return new Response(JSON.stringify({ error: "GROQ_API_KEY not set" }), { status: 500, headers });
 
-  // Groq usa formato OpenAI — el system prompt va como primer mensaje
+  if (!apiKey)
+    return new Response(JSON.stringify({ error: "no_key" }), { status: 500, headers });
+
   const groqMessages = [
     { role: "system", content: system || "" },
     ...messages
@@ -67,7 +61,7 @@ export default async function handler(req) {
         "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model:       "llama-3.3-70b-versatile", // mejor balance calidad/velocidad
+        model:       "llama-3.3-70b-versatile",
         max_tokens:  300,
         temperature: 0.65,
         messages:    groqMessages,
@@ -78,11 +72,10 @@ export default async function handler(req) {
 
     if (!res.ok)
       return new Response(
-        JSON.stringify({ error: data.error?.message || "Groq API error" }),
+        JSON.stringify({ error: data.error?.message || "Groq error" }),
         { status: 502, headers }
       );
 
-    // Normaliza respuesta al mismo formato que usaba el widget con Anthropic
     const text = data.choices?.[0]?.message?.content || "";
     return new Response(
       JSON.stringify({ content: [{ type: "text", text }] }),
@@ -91,7 +84,7 @@ export default async function handler(req) {
 
   } catch (err) {
     return new Response(
-      JSON.stringify({ error: "Fetch failed", detail: err.message }),
+      JSON.stringify({ error: err.message }),
       { status: 500, headers }
     );
   }
