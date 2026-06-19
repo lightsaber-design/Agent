@@ -468,4 +468,187 @@ function updateBadge() {
     badge.className = "rate-badge out";
     lockInput();
   } else if (remaining <= 2) {
-    badge.textContent = T
+    badge.textContent = T.rateMsgs(remaining);
+    badge.className = "rate-badge warn";
+  } else {
+    badge.textContent = T.rateMsgs(remaining);
+    badge.className = "rate-badge";
+  }
+}
+
+function lockInput() {
+  document.getElementById("chatInput").disabled = true;
+  document.getElementById("sendBtn").disabled = true;
+  document.getElementById("chatInput").placeholder = T.placeholderLocked;
+  document.querySelectorAll(".qr-btn").forEach(b => b.disabled = true);
+  document.getElementById("statusText").textContent = T.rateLimitBadge;
+}
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let conversation = [];
+let offered = false;
+
+// ── DOM HELPERS ───────────────────────────────────────────────────────────────
+const $msgs = () => document.getElementById("messages");
+
+function addAgentMsg(html) {
+  const d = document.createElement("div");
+  d.className = "msg agent";
+  d.innerHTML = `<div class="msg-avatar">✦</div><div class="bubble">${html}</div>`;
+  $msgs().appendChild(d);
+  $msgs().scrollTop = $msgs().scrollHeight;
+}
+
+function addUserMsg(text) {
+  const d = document.createElement("div");
+  d.className = "msg user";
+  d.innerHTML = `<div class="bubble">${text}</div><div class="msg-avatar" style="background:var(--surface2)">👤</div>`;
+  $msgs().appendChild(d);
+  $msgs().scrollTop = $msgs().scrollHeight;
+}
+
+function showTyping() {
+  const d = document.createElement("div");
+  d.className = "typing"; d.id = "typing";
+  d.innerHTML = `<div class="msg-avatar">✦</div><div class="typing-dots"><span></span><span></span><span></span></div>`;
+  $msgs().appendChild(d);
+  $msgs().scrollTop = $msgs().scrollHeight;
+}
+function removeTyping() { document.getElementById("typing")?.remove(); }
+
+function setQuickReplies(opts) {
+  const qr = document.getElementById("quickReplies");
+  qr.innerHTML = "";
+  opts.forEach(o => {
+    const b = document.createElement("button");
+    b.className = "qr-btn"; b.textContent = o;
+    b.onclick = () => { clearQR(); addUserMsg(o); processInput(o, true); };
+    qr.appendChild(b);
+  });
+}
+function clearQR() { document.getElementById("quickReplies").innerHTML = ""; }
+
+// ── SEND ─────────────────────────────────────────────────────────────────────
+async function sendMessage() {
+  const input = document.getElementById("chatInput");
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = "";
+  clearQR();
+  addUserMsg(text);
+  processInput(text);
+}
+
+async function processInput(text, isQR = false) {
+  const count = getRateData().count;
+  if (count >= MAX_MSGS) { lockInput(); return; }
+
+  incrementRate();
+  updateBadge();
+  showTyping();
+  conversation.push({ role: "user", content: text });
+
+  const serviceKW = LANG === 'en'
+    ? ["for me","help","hire","service","professional","build my","create my","need a website","want a website","how much","quote","price"]
+    : ["por mí","ayuda","contratar","servicio","profesional","hacer mi","crear mi","quiero una web","necesito una web","cuánto cuesta","presupuesto"];
+  const wantsService = serviceKW.some(k => text.toLowerCase().includes(k));
+
+  try {
+    const res = await fetch(PROXY_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages: conversation, system: SYSTEM })
+    });
+
+    const data = await res.json();
+
+    if (res.status === 429) {
+      removeTyping();
+      addAgentMsg(T.rateLimitMsg(CONTACT_EMAIL));
+      lockInput(); return;
+    }
+
+    const reply = data.content?.[0]?.text || (LANG === 'en' ? "Sorry, something went wrong. Try again." : "Disculpa, tuve un problema. Inténtalo de nuevo.");
+    conversation.push({ role: "assistant", content: reply });
+    removeTyping();
+
+    if (wantsService || reply.toLowerCase().includes("email")) {
+      addAgentMsg(reply + serviceCardHTML());
+      if (!offered) {
+        offered = true;
+        setTimeout(() => {
+          addAgentMsg(T.formLead);
+          showLeadForm();
+        }, 700);
+      }
+    } else {
+      addAgentMsg(reply);
+      const remaining = MAX_MSGS - getRateData().count;
+      if (remaining <= 2 && !offered) {
+        offered = true;
+        setTimeout(() => setQuickReplies(T.quickRepliesFinal), 500);
+      } else {
+        setQuickReplies(T.quickRepliesShort);
+      }
+    }
+  } catch (err) {
+    removeTyping();
+    addAgentMsg(T.techError(CONTACT_EMAIL));
+  }
+}
+
+function serviceCardHTML() {
+  return `<div class="service-card">
+    <div class="sc-title">${T.serviceTitle}</div>
+    <ul class="sc-items">
+      ${T.serviceItems.map(i => `<li>${i}</li>`).join("")}
+    </ul>
+  </div>`;
+}
+
+function showLeadForm() {
+  document.getElementById("formArea").style.display = "flex";
+  document.getElementById("quickReplies").innerHTML = "";
+  document.getElementById("inputRow").style.display = "none";
+  setTimeout(() => document.getElementById("inputName").focus(), 100);
+}
+
+// ── SUBMIT LEAD ───────────────────────────────────────────────────────────────
+async function submitLead() {
+  const name  = document.getElementById("inputName").value.trim();
+  const email = document.getElementById("inputEmail").value.trim();
+  const need  = document.getElementById("inputNeed").value.trim();
+  if (!name || !email) { document.getElementById(!name ? "inputName" : "inputEmail").focus(); return; }
+
+  const btn = document.getElementById("submitBtn");
+  btn.disabled = true; btn.textContent = T.submitSending;
+
+  try {
+    await fetch(`https://formspree.io/f/${FORMSPREE_ID}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name, email,
+        message: need || "(sin mensaje)",
+        language: LANG,
+        _replyto: email,
+        _subject: `Nuevo lead — Tu Web en 7 Días · ${name}`
+      })
+    });
+  } catch (_) { /* falla silenciosamente */ }
+
+  document.getElementById("formArea").style.display = "none";
+  document.getElementById("messages").style.display = "none";
+  document.getElementById("quickReplies").style.display = "none";
+  const s = document.getElementById("successMsg");
+  s.style.display = "flex";
+  document.getElementById("successName").textContent = T.successName(name);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+updateBadge();
+setTimeout(() => addAgentMsg(T.greeting), 400);
+setTimeout(() => setQuickReplies(T.quickReplies), 900);
+</script>
+</body>
+</html>
