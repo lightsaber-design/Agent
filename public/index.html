@@ -81,7 +81,6 @@
   }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
 
-  /* rate limit badge */
   .rate-badge {
     margin-left: auto;
     font-family: 'Space Mono', monospace;
@@ -130,7 +129,6 @@
     border-bottom-right-radius: 4px;
   }
 
-  /* service card */
   .service-card {
     margin-top: 10px; background: var(--bg);
     border: 1px solid var(--lav-soft); border-radius: 8px; padding: 10px 12px;
@@ -143,7 +141,6 @@
   .sc-items li { font-size: 11px; color: var(--ink-mid); display: flex; align-items: center; gap: 6px; }
   .sc-items li::before { content: '→'; color: var(--lav); font-size: 10px; }
 
-  /* typing */
   .typing { display: flex; gap: 8px; align-items: flex-end; }
   .typing-dots {
     background: var(--surface); border: 1px solid var(--border);
@@ -158,7 +155,6 @@
   .typing-dots span:nth-child(3){animation-delay:.4s}
   @keyframes blink{0%,80%,100%{opacity:.3}40%{opacity:1}}
 
-  /* quick replies */
   .quick-replies {
     padding: 0 16px 10px;
     display: flex; flex-wrap: wrap; gap: 6px;
@@ -172,7 +168,6 @@
   .qr-btn:hover { background: var(--lav); border-color: var(--lav); color: #fff; transform: translateY(-1px); }
   .qr-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
 
-  /* form */
   .form-area {
     padding: 0 16px 14px;
     display: flex; flex-direction: column; gap: 8px;
@@ -200,7 +195,6 @@
   .submit-btn:hover { background: var(--lav); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(90,79,207,.22); }
   .submit-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
 
-  /* input row */
   .input-row {
     padding: 10px 16px; border-top: 1px solid var(--border);
     display: flex; gap: 8px; align-items: center;
@@ -223,7 +217,6 @@
   .send-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
   .send-btn svg { width: 15px; height: 15px; fill: #fff; }
 
-  /* success */
   .success-msg {
     display: none; flex-direction: column; align-items: center;
     gap: 10px; padding: 28px 20px; text-align: center;
@@ -242,7 +235,6 @@
     font-family: 'Space Mono', monospace; font-size: 9.5px; color: var(--dust);
   }
 
-  /* footer */
   .footer-stamp {
     padding: 7px 16px; border-top: 1px solid var(--border);
     display: flex; align-items: center; justify-content: space-between;
@@ -257,7 +249,7 @@
   <div class="header">
     <div class="header-avatar">✦</div>
     <div style="flex:1">
-      <div class="header-name">Asistente · Tu Web en 7 Días</div>
+      <div class="header-name" id="headerName">Asistente · Tu Web en 7 Días</div>
       <div class="header-status">
         <span class="status-dot"></span>
         <span id="statusText">en línea</span>
@@ -272,16 +264,16 @@
   <div class="form-area" id="formArea" style="display:none">
     <div class="field-row">
       <div class="field">
-        <label>Tu nombre</label>
+        <label id="lblName">Tu nombre</label>
         <input type="text" id="inputName" placeholder="Carol" />
       </div>
       <div class="field">
-        <label>Email</label>
+        <label id="lblEmail">Email</label>
         <input type="email" id="inputEmail" placeholder="hola@tucorreo.com" />
       </div>
     </div>
     <div class="field">
-      <label>¿Qué necesitas? (opcional)</label>
+      <label id="lblNeed">¿Qué necesitas? (opcional)</label>
       <input type="text" id="inputNeed" placeholder="Ej: crear mi web desde cero" />
     </div>
     <button class="submit-btn" id="submitBtn" onclick="submitLead()">
@@ -292,8 +284,8 @@
   <div class="success-msg" id="successMsg">
     <div class="checkmark">✓</div>
     <div class="success-name" id="successName"></div>
-    <p class="success-sub">Tu mensaje fue recibido.<br>Me pondré en contacto contigo muy pronto.</p>
-    <p class="success-mono">// lead capturado · gracias</p>
+    <p class="success-sub" id="successSub">Tu mensaje fue recibido.<br>Me pondré en contacto contigo muy pronto.</p>
+    <p class="success-mono" id="successMono">// lead capturado · gracias</p>
   </div>
 
   <div class="input-row" id="inputRow">
@@ -306,16 +298,147 @@
   </div>
 
   <div class="footer-stamp">
-    <span>Tu Web en 7 Días · 2024</span>
+    <span id="footerBrand">Tu Web en 7 Días · 2024</span>
     <span>powered by <span class="powered">Groq</span> · Llama 3.3</span>
   </div>
 </div>
 
 <script>
-// ── CONFIG — CAMBIA ESTOS DOS VALORES ────────────────────────────────────────
-const PROXY_URL     = "https://agent-4gic.vercel.app/api/chat"; // ← tu URL de Vercel
-const CONTACT_EMAIL ="caroldenissetorres@gmail.com";                     // ← tu email
-const MAX_MSGS      = 5;   // mensajes por sesión
+// ════════════════════════════════════════════════════════════════════════════
+// CONFIG — cambia estos valores
+// ════════════════════════════════════════════════════════════════════════════
+const PROXY_URL     = "https://agent-4gic.vercel.app/api/chat";
+const CONTACT_EMAIL = "caroldenissetorres@gmail.com";
+const MAX_MSGS      = 5;
+const FORMSPREE_ID  = "YOUR_FORM_ID"; // ← reemplaza con tu ID de formspree.io
+
+// ════════════════════════════════════════════════════════════════════════════
+// DETECCIÓN DE IDIOMA — añade ?lang=en al link del ebook en inglés
+// Ejemplo: https://agent-4gic.vercel.app/?lang=en
+// Sin parámetro = español (predeterminado)
+// ════════════════════════════════════════════════════════════════════════════
+const urlParams = new URLSearchParams(window.location.search);
+const LANG = urlParams.get('lang') === 'en' ? 'en' : 'es';
+document.documentElement.lang = LANG;
+
+const TEXTS = {
+  es: {
+    headerName: "Asistente · Tu Web en 7 Días",
+    statusOnline: "en línea",
+    rateMsgs: (n) => `${n} mensajes`,
+    rateLimitBadge: "límite alcanzado",
+    placeholder: "Escribe tu pregunta...",
+    placeholderLocked: "Límite alcanzado",
+    greeting: "¡Hola! Soy el asistente de <b>Tu Web en 7 Días</b>. ¿En qué puedo ayudarte?",
+    quickReplies: ["¿Qué incluye el eBook?", "¿Necesito saber programar?", "¿Cuánto cuesta?", "Quiero que lo hagan por mí"],
+    quickRepliesShort: ["¿Qué incluye?", "¿Necesito programar?", "¿Cuánto cuesta?", "Contratar servicio"],
+    quickRepliesFinal: ["Quiero contratar el servicio", "Solo quiero el eBook"],
+    formLead: "Déjame tus datos y te contacto en menos de 24h.",
+    rateLimitMsg: (email) => `Has alcanzado el límite de esta sesión. Escríbeme directamente a <b>${email}</b> y te respondo enseguida.`,
+    techError: (email) => `Tuve un problema técnico. Escríbeme a <b>${email}</b>`,
+    serviceTitle: "Servicios de desarrollo web",
+    serviceItems: ["Web completa desde cero — desde €500", "IA y chatbots integrados", "SEO + pagos + optimización", "€30/hr"],
+    lblName: "Tu nombre", phName: "Carol",
+    lblEmail: "Email", phEmail: "hola@tucorreo.com",
+    lblNeed: "¿Qué necesitas? (opcional)", phNeed: "Ej: crear mi web desde cero",
+    submitBtn: "Enviar — te respondo pronto &nbsp;→",
+    submitSending: "Enviando...",
+    successSub: "Tu mensaje fue recibido.<br>Me pondré en contacto contigo muy pronto.",
+    successMono: "// lead capturado · gracias",
+    successName: (n) => `¡Hola, ${n}!`,
+    footerBrand: "Tu Web en 7 Días · 2024",
+  },
+  en: {
+    headerName: "Assistant · Your Website in 7 Days",
+    statusOnline: "online",
+    rateMsgs: (n) => `${n} messages`,
+    rateLimitBadge: "limit reached",
+    placeholder: "Type your question...",
+    placeholderLocked: "Limit reached",
+    greeting: "Hi! I'm the assistant for <b>Your Website in 7 Days</b>. How can I help?",
+    quickReplies: ["What's included?", "Do I need to code?", "How much does it cost?", "I want someone to do it for me"],
+    quickRepliesShort: ["What's included?", "Need to code?", "How much?", "Hire the service"],
+    quickRepliesFinal: ["I want to hire the service", "Just the eBook, thanks"],
+    formLead: "Leave your details and I'll get back to you within 24h.",
+    rateLimitMsg: (email) => `You've reached this session's limit. Email me directly at <b>${email}</b> and I'll respond right away.`,
+    techError: (email) => `I had a technical issue. Email me at <b>${email}</b>`,
+    serviceTitle: "Web development services",
+    serviceItems: ["Full website from scratch — from €500", "AI & chatbot integration", "SEO + payments + optimization", "€30/hr"],
+    lblName: "Your name", phName: "Jane",
+    lblEmail: "Email", phEmail: "hello@youremail.com",
+    lblNeed: "What do you need? (optional)", phNeed: "E.g. build my website from scratch",
+    submitBtn: "Send — I'll reply soon &nbsp;→",
+    submitSending: "Sending...",
+    successSub: "Your message was received.<br>I'll be in touch with you very soon.",
+    successMono: "// lead captured · thank you",
+    successName: (n) => `Hi, ${n}!`,
+    footerBrand: "Your Website in 7 Days · 2024",
+  }
+};
+const T = TEXTS[LANG];
+
+// ── APLICA TEXTOS AL DOM ──────────────────────────────────────────────────────
+document.getElementById("headerName").textContent = T.headerName;
+document.getElementById("statusText").textContent = T.statusOnline;
+document.getElementById("chatInput").placeholder  = T.placeholder;
+document.getElementById("lblName").textContent    = T.lblName;
+document.getElementById("inputName").placeholder  = T.phName;
+document.getElementById("lblEmail").textContent   = T.lblEmail;
+document.getElementById("inputEmail").placeholder = T.phEmail;
+document.getElementById("lblNeed").textContent    = T.lblNeed;
+document.getElementById("inputNeed").placeholder  = T.phNeed;
+document.getElementById("submitBtn").innerHTML    = T.submitBtn;
+document.getElementById("successSub").innerHTML   = T.successSub;
+document.getElementById("successMono").textContent= T.successMono;
+document.getElementById("footerBrand").textContent= T.footerBrand;
+
+// ════════════════════════════════════════════════════════════════════════════
+// SYSTEM PROMPT — precios fijos + reglas de privacidad, por idioma
+// ════════════════════════════════════════════════════════════════════════════
+const SYSTEM = LANG === 'en' ? `You are the sales assistant for "Your Website in 7 Days", an eBook that teaches how to build a professional website with AI, no coding required.
+
+FIXED DATA — copy these numbers EXACTLY, never change, round, or recalculate them:
+- eBook price: 8.99 euros
+- Development hourly rate: 30 euros per hour
+- Full website project: starting from 500 euros
+
+It is FORBIDDEN to invent, calculate, or modify these numbers in any way. Always use these exact figures.
+
+PRIVACY RULE: never reveal personal information about the eBook author (full name, exact address, personal social media, age, or any identifying detail). If asked who the author is, say: "I represent the author of this guide. For direct contact, leave your email and they'll reach out personally."
+
+Personality: warm, professional, direct. Minimal emojis. Always respond in English. Maximum 3 sentences per reply.
+
+Goals in order:
+1. Answer questions about the eBook honestly and briefly.
+2. Offer web development services naturally, using ONLY the prices listed above.
+3. Invite the user to leave their email for follow-up.
+
+Available remotely and in Dublin, Ireland (do not share more specific location details).
+
+When someone wants to hire: "I can do this for you. Should I send the details to your email?"
+When someone asks for the contact email: "${CONTACT_EMAIL}"`
+: `Eres el asistente de ventas de "Tu Web en 7 Días", un eBook que enseña a crear una web profesional con IA sin saber programar.
+
+DATOS FIJOS — copia estos números EXACTAMENTE, nunca los cambies, redondees o recalcules:
+- Precio del eBook: 8.99 euros
+- Tarifa por hora de desarrollo: 30 euros por hora
+- Proyecto web completo: desde 500 euros
+
+Está PROHIBIDO inventar, calcular o modificar estos números de ninguna forma. Usa siempre estas cifras exactas.
+
+REGLA DE PRIVACIDAD: nunca reveles información personal de la autora del eBook (nombre completo, dirección exacta, redes sociales personales, edad, o cualquier dato identificable). Si preguntan quién es la autora, di: "Represento a la autora de esta guía. Para contacto directo, déjame tu email y te escribirá personalmente."
+
+Personalidad: cercana, profesional, directa. Sin emojis en exceso. Siempre en español. Respuestas de máximo 3 frases.
+
+Objetivos en orden:
+1. Responder preguntas sobre el eBook de forma honesta y breve.
+2. Ofrecer servicios de desarrollo web profesional cuando sea natural, usando SOLO los precios de la lista de arriba.
+3. Invitar al usuario a dejar su email para seguimiento.
+
+Disponible en Dublín, Irlanda y remoto (no compartas más detalles de ubicación).
+
+Cuando alguien quiera contratar: "Puedo hacerlo por ti. ¿Te mando los detalles a tu email?"
+Cuando alguien pida el email de contacto: "${CONTACT_EMAIL}"`;
 
 // ── RATE LIMIT (cliente) ──────────────────────────────────────────────────────
 const RL_KEY = "ebook_agent_rl";
@@ -324,7 +447,6 @@ function getRateData() {
   try {
     const d = JSON.parse(localStorage.getItem(RL_KEY) || "{}");
     const now = Date.now();
-    // reset si han pasado más de 1 hora
     if (d.ts && (now - d.ts) > 3600000) return { count: 0, ts: now };
     return d.count !== undefined ? d : { count: 0, ts: now };
   } catch { return { count: 0, ts: Date.now() }; }
@@ -342,215 +464,8 @@ function updateBadge() {
   const remaining = MAX_MSGS - getRateData().count;
   const badge = document.getElementById("rateBadge");
   if (remaining <= 0) {
-    badge.textContent = "límite alcanzado";
+    badge.textContent = T.rateLimitBadge;
     badge.className = "rate-badge out";
     lockInput();
   } else if (remaining <= 2) {
-    badge.textContent = `${remaining} mensaje${remaining > 1 ? 's' : ''}`;
-    badge.className = "rate-badge warn";
-  } else {
-    badge.textContent = `${remaining} mensajes`;
-    badge.className = "rate-badge";
-  }
-}
-
-function lockInput() {
-  document.getElementById("chatInput").disabled = true;
-  document.getElementById("sendBtn").disabled = true;
-  document.getElementById("chatInput").placeholder = "Límite alcanzado";
-  document.querySelectorAll(".qr-btn").forEach(b => b.disabled = true);
-  document.getElementById("statusText").textContent = "límite de sesión";
-}
-
-// ── STATE ─────────────────────────────────────────────────────────────────────
-let conversation = [];
-let offered = false;
-
-const SYSTEM = `Eres el asistente de ventas de "Tu Web en 7 Días", un eBook que enseña a crear una web profesional con IA sin saber programar, precio €8.99..
-predeterminado en inglés.
-
-Personalidad: cercana, profesional, directa. Sin emojis en exceso. Siempre en español o inglés. Respuestas de máximo 3 frases.
-
-Objetivos en orden:
-1. Responder preguntas sobre el eBook de forma honesta y breve.
-2. Ofrecer servicios de desarrollo web profesional cuando sea natural.
-3. Invitar al usuario a dejar su email para seguimiento.
-
-Servicios disponibles:
-- Creación de webs (WordPress, Squarespace, Wix) desde €500
-- Integración IA y chatbots en webs existentes
-- SEO, velocidad y pagos online
-- Tarifa hora: €30/hr
-- Disponible en Dublín y remoto
-
-Cuando alguien quiera contratar: "Puedo hacerlo por ti. ¿Te mando los detalles a tu email?"
-Cuando alguien pida el email de contacto: "${CONTACT_EMAIL}"`;
-
-// ── DOM HELPERS ───────────────────────────────────────────────────────────────
-const $msgs = () => document.getElementById("messages");
-
-function addAgentMsg(html) {
-  const d = document.createElement("div");
-  d.className = "msg agent";
-  d.innerHTML = `<div class="msg-avatar">✦</div><div class="bubble">${html}</div>`;
-  $msgs().appendChild(d);
-  $msgs().scrollTop = $msgs().scrollHeight;
-}
-
-function addUserMsg(text) {
-  const d = document.createElement("div");
-  d.className = "msg user";
-  d.innerHTML = `<div class="bubble">${text}</div><div class="msg-avatar" style="background:var(--surface2)">👤</div>`;
-  $msgs().appendChild(d);
-  $msgs().scrollTop = $msgs().scrollHeight;
-}
-
-function showTyping() {
-  const d = document.createElement("div");
-  d.className = "typing"; d.id = "typing";
-  d.innerHTML = `<div class="msg-avatar">✦</div><div class="typing-dots"><span></span><span></span><span></span></div>`;
-  $msgs().appendChild(d);
-  $msgs().scrollTop = $msgs().scrollHeight;
-}
-function removeTyping() { document.getElementById("typing")?.remove(); }
-
-function setQuickReplies(opts) {
-  const qr = document.getElementById("quickReplies");
-  qr.innerHTML = "";
-  opts.forEach(o => {
-    const b = document.createElement("button");
-    b.className = "qr-btn"; b.textContent = o;
-    b.onclick = () => { clearQR(); addUserMsg(o); processInput(o, true); };
-    qr.appendChild(b);
-  });
-}
-function clearQR() { document.getElementById("quickReplies").innerHTML = ""; }
-
-// ── SEND ─────────────────────────────────────────────────────────────────────
-async function sendMessage() {
-  const input = document.getElementById("chatInput");
-  const text = input.value.trim();
-  if (!text) return;
-  input.value = "";
-  clearQR();
-  addUserMsg(text);
-  processInput(text);
-}
-
-async function processInput(text, isQR = false) {
-  // client-side rate check
-  const count = getRateData().count;
-  if (count >= MAX_MSGS) { lockInput(); return; }
-
-  incrementRate();
-  updateBadge();
-  showTyping();
-  conversation.push({ role: "user", content: text });
-
-  const serviceKW = ["por mí","ayuda","contratar","servicio","profesional","hacer mi","crear mi","quiero una web","necesito una web","cuánto cuesta","presupuesto"];
-  const wantsService = serviceKW.some(k => text.toLowerCase().includes(k));
-
-  try {
-    const res = await fetch(PROXY_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: conversation, system: SYSTEM })
-    });
-
-    const data = await res.json();
-
-    if (res.status === 429) {
-      removeTyping();
-      addAgentMsg(`Has alcanzado el límite de esta sesión. Escríbeme directamente a <b>${CONTACT_EMAIL}</b> y te respondo enseguida.`);
-      lockInput(); return;
-    }
-
-    const reply = data.content?.[0]?.text || "Disculpa, tuve un problema. Inténtalo de nuevo.";
-    conversation.push({ role: "assistant", content: reply });
-    removeTyping();
-
-    if (wantsService || reply.toLowerCase().includes("email") || reply.toLowerCase().includes("por ti")) {
-      addAgentMsg(reply + serviceCardHTML());
-      if (!offered) {
-        offered = true;
-        setTimeout(() => {
-          addAgentMsg("Déjame tus datos y te contacto en menos de 24h.");
-          showLeadForm();
-        }, 700);
-      }
-    } else {
-      addAgentMsg(reply);
-      const remaining = MAX_MSGS - getRateData().count;
-      if (remaining <= 2 && !offered) {
-        offered = true;
-        setTimeout(() => {
-          setQuickReplies(["Quiero contratar el servicio", "Solo quiero el eBook"]);
-        }, 500);
-      } else {
-        setQuickReplies(["¿Qué incluye?", "¿Necesito programar?", "¿Cuánto cuesta?", "Contratar servicio"]);
-      }
-    }
-  } catch (err) {
-    removeTyping();
-    addAgentMsg(`Tuve un problema técnico. Escríbeme a <b>${CONTACT_EMAIL}</b>`);
-  }
-}
-
-function serviceCardHTML() {
-  return `<div class="service-card">
-    <div class="sc-title">Servicios de desarrollo web</div>
-    <ul class="sc-items">
-      <li>Web completa desde cero — desde €500</li>
-      <li>IA y chatbots integrados</li>
-      <li>SEO + pagos + optimización</li>
-      <li>€20/hr · Dublín y remoto</li>
-    </ul>
-  </div>`;
-}
-
-function showLeadForm() {
-  document.getElementById("formArea").style.display = "flex";
-  document.getElementById("quickReplies").innerHTML = "";
-  document.getElementById("inputRow").style.display = "none";
-  setTimeout(() => document.getElementById("inputName").focus(), 100);
-}
-
-// ── SUBMIT LEAD ───────────────────────────────────────────────────────────────
-async function submitLead() {
-  const name  = document.getElementById("inputName").value.trim();
-  const email = document.getElementById("inputEmail").value.trim();
-  const need  = document.getElementById("inputNeed").value.trim();
-  if (!name || !email) { document.getElementById(!name ? "inputName" : "inputEmail").focus(); return; }
-
-  const btn = document.getElementById("submitBtn");
-  btn.disabled = true; btn.textContent = "Enviando...";
-
-  // ── FORMSPREE — reemplaza YOUR_FORM_ID con el tuyo de formspree.io ──────────
-  try {
-    await fetch("https://formspree.io/f/YOUR_FORM_ID", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name, email,
-        message: need || "(sin mensaje)",
-        _replyto: email,
-        _subject: `Nuevo lead — Tu Web en 7 Días · ${name}`
-      })
-    });
-  } catch (_) { /* falla silenciosamente — igual mostramos éxito */ }
-
-  document.getElementById("formArea").style.display = "none";
-  document.getElementById("messages").style.display = "none";
-  document.getElementById("quickReplies").style.display = "none";
-  const s = document.getElementById("successMsg");
-  s.style.display = "flex";
-  document.getElementById("successName").textContent = `¡Hola, ${name}!`;
-}
-
-// ── INIT ──────────────────────────────────────────────────────────────────────
-updateBadge();
-setTimeout(() => addAgentMsg("¡Hola! Soy el asistente de <b>Tu Web en 7 Días</b>. ¿En qué puedo ayudarte?"), 400);
-setTimeout(() => setQuickReplies(["¿Qué incluye el eBook?", "¿Necesito saber programar?", "¿Cuánto cuesta?", "Quiero que lo hagan por mí"]), 900);
-</script>
-</body>
-</html>
+    badge.textContent = T
