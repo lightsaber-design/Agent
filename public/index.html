@@ -310,7 +310,7 @@
 const PROXY_URL     = "https://agent-4gic.vercel.app/api/chat";
 const CONTACT_EMAIL = "caroldenissetorres@gmail.com";
 const MAX_MSGS      = 5;
-const FORMSPREE_ID  = "YOUR_FORM_ID"; // ← reemplaza con tu ID de formspree.io
+ 
 
 // ════════════════════════════════════════════════════════════════════════════
 // DETECCIÓN DE IDIOMA — añade ?lang=en al link del ebook en inglés
@@ -624,7 +624,7 @@ async function submitLead() {
   btn.disabled = true; btn.textContent = T.submitSending;
 
   try {
-    await fetch(`https://formspree.io/f/${FORMSPREE_ID}`, {
+    await fetch(`https://script.google.com/macros/s/AKfycbxrS0u4Zz0Hx-M71a0CS32YEwfaWQzWJwlke3p9cQovFfdVGkBu2CUCxBpNAp8KT7WV/exec`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
